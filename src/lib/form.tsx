@@ -1,16 +1,22 @@
 import * as React from 'react'
 
-interface InputHandler {
-  value: any,
+type FormInput<TValue> = {
+  value: TValue,
   onChange: React.ChangeEventHandler
 }
 
-export interface FormComponentProps {
-  input: (field: string) => InputHandler
+type FormHandler<TValue> = { [P in keyof TValue]: FormHandler<TValue[P]> } & { input: FormInput<TValue> }
+
+type Field<TValue> = (FormHandler<TValue> | {
+  input: TValue,
+  onChange: React.ChangeEventHandler
+})
+
+export interface FormComponentProps<T> {
+  fields: FormHandler<T>
 }
 
-
-type Form = React.ComponentClass<FormComponentProps> | React.StatelessComponent<FormComponentProps>
+type Form<T> = React.ComponentClass<FormComponentProps<T>> | React.StatelessComponent<FormComponentProps<T>>
 
 type FormProps<T> = {
   defaultValue?: T,
@@ -25,7 +31,7 @@ interface FormState<T> {
   }
 }
 
-export function form<T>(FormComponent: Form): React.ComponentClass<FormProps<T>> {
+export function form<T>(FormComponent: Form<T>): React.ComponentClass<FormProps<T>> {
   class Form extends React.Component<FormProps<T>, FormState<T>> {
     constructor(props: FormProps<T>) {
       super(props)
@@ -51,8 +57,9 @@ export function form<T>(FormComponent: Form): React.ComponentClass<FormProps<T>>
       }
     }
 
-    private input(key: string): InputHandler {
-      const field = this.state.fields[key]
+    private input(picker: (s: T) => any): Field {
+      const field = picker(this.state.fields)
+      // this.state.fields[key]
       return {
         value: field ? field.value : undefined,
         onChange: this.handleChange(key)
@@ -60,9 +67,16 @@ export function form<T>(FormComponent: Form): React.ComponentClass<FormProps<T>>
     }
 
     render() {
-      console.log(JSON.stringify(this.state, null, 2))
+      const foo = (key) : FormHandler => {
+
+      }
+
+      // const handler: FormHandler<T> = {
+      //   [key: P in keyof T]: foo(key)
+      // }
+
       return (
-        <FormComponent input={this.input} />
+        <FormComponent fields={handler} />
       )
     }
   }
