@@ -9,9 +9,7 @@
     "react-dom": "^16.4.1"
   },
   "scripts": {
-    "start": "webpack-dev-server --hot --inline --colors --port 3000 --open",
     "demo": "node demo/run.js",
-    "build": "webpack --config webpack.config.js --watch",
     "test": "jest"
   },
   "peerDependencies": {
