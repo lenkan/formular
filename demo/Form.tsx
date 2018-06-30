@@ -1,16 +1,6 @@
 import * as React from 'react'
 import { form, FormComponentProps } from '../lib/form'
 
-const TextInput = ({ label, input, meta }) => {
-  return (
-    <React.Fragment>
-      <label htmlFor={input.id}>{label}</label>
-      <input type='text' {...input} />
-      {meta.touched && <span>*</span>}
-    </React.Fragment>
-  )
-}
-
 const Form = (props: FormComponentProps) => {
   const { handleSubmit, input, value, enumerate, push, meta, change } = props
 
