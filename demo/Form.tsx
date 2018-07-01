@@ -2,7 +2,9 @@ import * as React from 'react'
 import { form, FormComponentProps } from '../lib/form'
 
 const Form = (props: FormComponentProps) => {
-  const { handleSubmit, field, input, array } = props
+  const { handleSubmit, field, array } = props
+  const interests = array('interests')
+  const nextInterest = field('next-interest')
 
   return (
     <form onSubmit={handleSubmit}>
@@ -14,10 +16,10 @@ const Form = (props: FormComponentProps) => {
       <fieldset>
         <legend>Namn</legend>
         <label htmlFor='first-name'>Efternamn</label>
-        <input {...input.text('first-name')} />
+        <input {...field('first-name').input({ type: 'text' })} />
         <label htmlFor='last-name'>Efternamn</label>
-        <input {...input.text('last-name')} />
-        <select {...input.select('gender')} >
+        <input {...field('last-name').input({ type: 'text' })} />
+        <select {...field('gender').input({ type: 'select' })} >
           <option value='male'>Male</option>
           <option value='female'>Female</option>
         </select>
@@ -25,29 +27,34 @@ const Form = (props: FormComponentProps) => {
       <fieldset>
         <legend>Address</legend>
         <label htmlFor='address.street'>Street</label>
-        <input  {...input.text('address.street')} />
+        <input  {...field('address.street').input({ type: 'text' })} />
         <label>ZipCode</label>
-        <input  {...input.text('address.zipcode')} />
+        <input  {...field('address.zipcode').input({ type: 'text' })} />
       </fieldset>
       <fieldset>
         <legend>Interests</legend>
         <label htmlFor='next-interest'>Lägg till</label>
         {
-          array('interests').enumerate(({ key, value }) => {
+          interests.enumerate(({ key, value, index }) => {
             return (
               <div key={key}>
-                <input key={key} {...input.text(key)} />
+                <input {...field(key).input({ type: 'text' })} />
+                <button type='button'
+                  onClick={() => {
+                    interests.remove(index)
+                  }}>
+                  {'-'}
+                </button>
               </div>
             )
           })
         }
         <div>
-          <input {...input.text('next-interest')} />
+          <input {...nextInterest.input({ type: 'text' })} />
           <button type="button"
             onClick={() => {
-              const next = field('next-interest')
-              array('interests').push(next.value)
-              next.change('')
+              interests.push(nextInterest.value)
+              nextInterest.change('')
             }}>
             {'+'}
           </button>
@@ -56,24 +63,24 @@ const Form = (props: FormComponentProps) => {
       <fieldset>
         <legend>Status</legend>
         <div>
-          <input {...input.checkbox('status', 'bar')} />
+          <input {...field('status').input({ type: 'checkbox', value: 'bar', exclusive: true })} />
           <label htmlFor='status.bar' >Bar</label>
         </div>
         <div>
-          <input {...input.checkbox('status', 'foo')} />
+          <input {...field('status').input({ type: 'checkbox', value: 'foo', exclusive: true })} />
           <label htmlFor='status.foo' >Foo</label>
         </div>
       </fieldset>
       <fieldset>
         <legend>Status</legend>
         <label htmlFor='statusradio.bar' >Bar</label>
-        <input {...input.radio('statusradio', 'bar')} />
+        <input {...field('statusradio').input({ type: 'radio', value: 'bar', exclusive: true })} />
         <label htmlFor='statusradio.foo' >Foo</label>
-        <input {...input.radio('statusradio', 'foo')} />
+        <input {...field('statusradio').input({ type: 'radio', value: 'foo', exclusive: true })} />
       </fieldset>
       <fieldset>
         <legend>Nyhetsbrev</legend>
-        <input {...input.checkbox('news')} />
+        <input {...field('news').input({ type: 'checkbox' })} />
         <label htmlFor='news'>Jag vill ha nyhetsbrev</label>
       </fieldset>
       <button type='submit'>Spara</button>

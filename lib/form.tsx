@@ -4,55 +4,21 @@ import reduce, { FormState, Action } from './reducer';
 type ToggleInputType = 'radio' | 'checkbox'
 type TextInputType = 'text' | 'password' | 'number' | 'email'
 
-type InputProps = {
-  type: ToggleInputType | TextInputType
-  onChange: React.ChangeEventHandler<HTMLInputElement>
-  onBlur: React.FocusEventHandler<HTMLInputElement>
+interface HTMLElementListener<T extends HTMLSelectElement | HTMLInputElement> {
+  type?: ToggleInputType | TextInputType
   checked?: boolean
   id: string
   name: string
   value: string | string[] | number
+  onChange: React.ChangeEventHandler<T>
+  onBlur: React.FocusEventHandler<T>
 }
 
-type SelectProps = {
-  onChange: React.ChangeEventHandler<HTMLSelectElement>
-  onBlur: React.FocusEventHandler<HTMLSelectElement>
-  id: string
-  name: string
-  value: string | string[] | number
-}
-
-type TextareaProps = {
-  onChange: React.ChangeEventHandler<HTMLTextAreaElement>
-  onBlur: React.FocusEventHandler<HTMLTextAreaElement>
-  id: string
-  name: string
-  value: string
-}
-
-type CustomProps<T> = {
-  value: T,
-  onChange: (value: T) => void,
-  onBlur: () => void
-}
-
-type ToggleOptions = {
-  /**
-   * Specifies wether this checkbox should exclusively
-   * set the specified field value
-   */
+interface InputOptions {
+  type?: 'radio' | 'checkbox' | 'text' | 'password' | 'number' | 'email' | 'textarea' | 'select'
   exclusive?: boolean
+  value?: string
 }
-
-
-type SelectInputHandler = (key: string) => SelectProps
-type TextInputHandler = (key: string) => InputProps
-type ToggleInputHandler = (key: string, value?: string, options?: ToggleOptions) => InputProps
-
-type FormInput =
-  { [T in TextInputType]: TextInputHandler } &
-  { [T in ToggleInputType]: ToggleInputHandler } &
-  { select: SelectInputHandler }
 
 interface FormField {
   /**
@@ -69,6 +35,12 @@ interface FormField {
    * Changes the value of this field.
    */
   change(value: any)
+
+  /**
+   * Creates props to pass to an input element
+   * @param options 
+   */
+  input<T extends HTMLInputElement | HTMLSelectElement>(options: InputOptions): HTMLElementListener<T>
 }
 
 interface FormArray {
@@ -79,7 +51,6 @@ interface FormArray {
 
 export interface FormComponentProps {
   handleSubmit: (values: any) => void
-  input: FormInput
   field: (key: string) => FormField
   array: (key: string) => FormArray
 }
@@ -89,10 +60,8 @@ type FormProps = {
   onSubmit?: (value: any) => any
 }
 
-function onChange<T extends HTMLInputElement | HTMLSelectElement>(handler: (value: string) => void) {
-  return (event: React.ChangeEvent<T>) => {
-    handler(event.target.value)
-  }
+function onChange<T extends HTMLInputElement | HTMLSelectElement>(handler: React.ChangeEventHandler<T>) {
+  return e => handler(e)
 }
 
 export function form(FormComponent: React.ComponentClass<FormComponentProps> | React.StatelessComponent<FormComponentProps>): React.ComponentClass<FormProps> {
@@ -108,10 +77,8 @@ export function form(FormComponent: React.ComponentClass<FormComponentProps> | R
       this.handleSubmit = this.handleSubmit.bind(this)
       this.dispatch = this.dispatch.bind(this)
       this.field = this.field.bind(this)
+      this.input = this.input.bind(this)
       this.array = this.array.bind(this)
-      this.selectInput = this.selectInput.bind(this)
-      this.toggleInput = this.toggleInput.bind(this)
-      this.textInput = this.textInput.bind(this)
     }
 
     private dispatch(action: Action) {
@@ -123,15 +90,85 @@ export function form(FormComponent: React.ComponentClass<FormComponentProps> | R
       this.props.onSubmit && this.props.onSubmit(this.state.values)
     }
 
+    private input<T extends HTMLInputElement | HTMLSelectElement>(field: string, options: InputOptions): HTMLElementListener<T> {
+      const { type } = options
+      switch (type) {
+        case 'text':
+        case 'password':
+        case 'email':
+          return {
+            id: field,
+            name: field,
+            value: this.state.values[field] || '',
+            type,
+            onChange: onChange<HTMLInputElement>(event => this.dispatch({
+              type: 'FIELD_CHANGE',
+              field,
+              value: event.target.value
+            })),
+            onBlur: () => this.dispatch({
+              type: 'FIELD_BLUR',
+              field
+            })
+          }
+        case 'select':
+          return {
+            id: field,
+            name: field,
+            value: this.state.values[field] || '',
+            onChange: onChange<HTMLSelectElement>(event => this.dispatch({
+              type: 'FIELD_CHANGE',
+              field,
+              value: event.target.value
+            })),
+            onBlur: () => this.dispatch({
+              type: 'FIELD_BLUR',
+              field
+            })
+          }
+        case 'checkbox':
+        case 'radio':
+          const { value } = options
+          const key = options.exclusive ? `${field}.${value}` : field
+          const checked = value !== undefined
+            ? this.state.values[field] === value
+            : !!this.state.values[field]
+          return {
+            type,
+            name: key,
+            id: key,
+            checked,
+            value,
+            onChange: onChange<HTMLInputElement>(e => this.dispatch({
+              type: 'FIELD_CHANGE',
+              field,
+              value: e.target.checked
+                ? value !== undefined ? value : true
+                : value !== undefined ? '' : false
+            })),
+            onBlur: () => this.dispatch({
+              type: 'FIELD_BLUR',
+              field
+            })
+          }
+        default:
+          return undefined
+      }
+    }
+
+
     private field(field: string): FormField {
       return {
         touched: this.state.touched[field] || false,
         value: this.state.values[field],
-        change: value => this.dispatch({
-          type: 'FIELD_CHANGE',
-          field,
-          value
-        })
+        change: (value) => {
+          this.dispatch({
+            type: 'FIELD_CHANGE',
+            field,
+            value
+          })
+        },
+        input: options => this.input(field, options)
       }
     }
 
@@ -155,82 +192,11 @@ export function form(FormComponent: React.ComponentClass<FormComponentProps> | R
       }
     }
 
-    private selectInput(field): SelectProps {
-      return {
-        value: this.state.values[field] || '',
-        onChange: onChange(value => this.dispatch({
-          type: 'FIELD_CHANGE',
-          field,
-          value
-        })),
-        onBlur: () => this.dispatch({ type: 'FIELD_BLUR', field }),
-        name: field,
-        id: field
-      }
-    }
-
-    private textInput(type: TextInputType): TextInputHandler {
-      return field => ({
-        type,
-        value: this.state.values[field] || '',
-        onChange: onChange(value => this.dispatch({
-          type: 'FIELD_CHANGE',
-          field,
-          value
-        })),
-        onBlur: () => this.dispatch({
-          type: 'FIELD_BLUR',
-          field
-        }),
-        name: field,
-        id: field
-      })
-    }
-
-    private toggleInput(type: ToggleInputType): ToggleInputHandler {
-      return (field, value, options = { exclusive: false }) => {
-        const key = options.exclusive ? `${field}.${value}` : field
-        const checked = value !== undefined
-          ? this.state.values[field] === value
-          : !!this.state.values[field]
-
-        const checkedValue = value !== undefined ? value : true
-        const unCheckedValue = value !== undefined ? value : true
-
-        return {
-          type,
-          name: key,
-          id: key,
-          checked,
-          value,
-          onChange: (e) => this.dispatch({
-            type: 'FIELD_CHANGE',
-            field,
-            value: e.target.checked
-              ? value !== undefined ? value : true
-              : value !== undefined ? '' : false
-          }),
-          onBlur: () => this.dispatch({
-            type: 'FIELD_BLUR',
-            field
-          })
-        }
-      }
-    }
 
     render() {
       return (
         <FormComponent
           field={this.field}
-          input={{
-            select: this.selectInput,
-            text: this.textInput('text'),
-            password: this.textInput('password'),
-            number: this.textInput('number'),
-            email: this.textInput('email'),
-            checkbox: this.toggleInput('checkbox'),
-            radio: this.toggleInput('radio')
-          }}
           array={this.array}
           handleSubmit={this.handleSubmit}
         />
