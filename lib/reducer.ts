@@ -16,9 +16,8 @@ export interface FormState {
 }
 
 interface ChangeAction {
-  field: string
   type: 'FIELD_CHANGE'
-  value: any
+  target: HTMLInputElement | { name: string, value: any }
 }
 
 interface BlurAction {
@@ -46,6 +45,42 @@ const initialState: FormState = {
   refresh: false
 }
 
+function readChangeValue(values, event) {
+  console.log(event)
+  const target = event
+  if (target instanceof HTMLInputElement) {
+    const name = target.name
+    switch (target.type) {
+      case 'checkbox':
+        if (target.checked) {
+          return {
+            ...values,
+            [name]: target.value
+              ? [...Array.isArray(values[name]) ? values[name] : [], target.value]
+              : true
+          }
+        }
+        return {
+          ...values,
+          [name]: target.value
+            ? (Array.isArray(values[name]) ? values[name] : []).filter(x => x !== target.value)
+            : false
+        }
+      case 'radio':
+        return {
+          ...values,
+          [name]: target.value
+        }
+      default:
+        return {
+          ...values,
+          [name]: target.value
+        }
+    }
+  }
+  throw new Error('Custom not supported')
+}
+
 function reduce(prevState: FormState = initialState, action: Action): FormState {
   switch (action.type) {
     case 'FIELD_BLUR':
@@ -59,10 +94,7 @@ function reduce(prevState: FormState = initialState, action: Action): FormState 
     case 'FIELD_CHANGE':
       return {
         ...prevState,
-        values: {
-          ...prevState.values,
-          [action.field]: action.value
-        }
+        values: readChangeValue(prevState.values, action.target)
       }
     case 'FIELD_PUSH':
       return {
@@ -96,7 +128,10 @@ function reduce(prevState: FormState = initialState, action: Action): FormState 
   }
 }
 
+export type Dispatcher = (action: Action) => void
+
 export default (prevState: FormState = initialState, action: Action) => {
   const newState = reduce(prevState, action)
+  console.log(JSON.stringify(newState, null, 2))
   return newState
 }

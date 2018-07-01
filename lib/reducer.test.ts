@@ -14,8 +14,7 @@ describe('reduce', () => {
     it('changes value in state', () => {
       expect(reduce(state({ values: { name: 'foo' } }), {
         type: 'FIELD_CHANGE',
-        field: 'name',
-        value: 'bar'
+        target: { name: 'foo', value: 'bar' }
       })).toMatchObject({
         values: { name: 'bar' }
       })
@@ -29,8 +28,7 @@ describe('reduce', () => {
 
       expect(reduce(state({ values: { address } }), {
         type: 'FIELD_CHANGE',
-        field: 'address.street',
-        value: 'Wall Street'
+        target: { value: 'Wall Street', name: 'address.street' }
       })).toMatchObject({
         values: {
           'address.street': 'Wall Street'
