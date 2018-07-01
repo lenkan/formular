@@ -2,13 +2,13 @@ import * as React from 'react'
 import { form, FormComponentProps } from '../lib/form'
 
 const Form = (props: FormComponentProps) => {
-  const { handleSubmit, input, value, enumerate, push, meta, change } = props
+  const { handleSubmit, field, input, array } = props
 
   return (
     <form onSubmit={handleSubmit}>
       <section>
         <h6>
-          Hallo, {value('first-name')}
+          Hallo, {field('first-name').value}
         </h6>
       </section>
       <fieldset>
@@ -33,7 +33,7 @@ const Form = (props: FormComponentProps) => {
         <legend>Interests</legend>
         <label htmlFor='next-interest'>Lägg till</label>
         {
-          enumerate('interests', ({ key, value }) => {
+          array('interests').enumerate(({ key, value }) => {
             return (
               <div key={key}>
                 <input key={key} {...input.text(key)} />
@@ -45,8 +45,9 @@ const Form = (props: FormComponentProps) => {
           <input {...input.text('next-interest')} />
           <button type="button"
             onClick={() => {
-              push('interests', value('next-interest'))
-              change('next-interest', '')
+              const next = field('next-interest')
+              array('interests').push(next.value)
+              next.change('')
             }}>
             {'+'}
           </button>
@@ -55,24 +56,24 @@ const Form = (props: FormComponentProps) => {
       <fieldset>
         <legend>Status</legend>
         <div>
-          <input type='checkbox' {...input.selection('status', 'bar')} />
+          <input {...input.checkbox('status', 'bar')} />
           <label htmlFor='status.bar' >Bar</label>
         </div>
         <div>
-          <input type='checkbox' {...input.selection('status', 'foo')} />
+          <input {...input.checkbox('status', 'foo')} />
           <label htmlFor='status.foo' >Foo</label>
         </div>
       </fieldset>
       <fieldset>
         <legend>Status</legend>
         <label htmlFor='statusradio.bar' >Bar</label>
-        <input type='radio' {...input.selection('statusradio', 'bar')} />
+        <input {...input.radio('statusradio', 'bar')} />
         <label htmlFor='statusradio.foo' >Foo</label>
-        <input type='radio' {...input.selection('statusradio', 'foo')} />
+        <input {...input.radio('statusradio', 'foo')} />
       </fieldset>
       <fieldset>
         <legend>Nyhetsbrev</legend>
-        <input type='checkbox' {...input.toggle('news')} />
+        <input {...input.checkbox('news')} />
         <label htmlFor='news'>Jag vill ha nyhetsbrev</label>
       </fieldset>
       <button type='submit'>Spara</button>

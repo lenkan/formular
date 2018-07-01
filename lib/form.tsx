@@ -1,31 +1,97 @@
 import * as React from 'react'
 import reduce, { FormState, Action } from './reducer';
 
-type FieldMeta = {
-  touched: boolean
+type ToggleInputType = 'radio' | 'checkbox'
+type TextInputType = 'text' | 'password' | 'number' | 'email'
+
+type InputProps = {
+  type: ToggleInputType | TextInputType
+  onChange: React.ChangeEventHandler<HTMLInputElement>
+  onBlur: React.FocusEventHandler<HTMLInputElement>
+  checked?: boolean
+  id: string
+  name: string
+  value: string | string[] | number
 }
 
-interface InputListener {
-  select: (key: string) => React.DetailedHTMLProps<React.SelectHTMLAttributes<HTMLSelectElement>, HTMLSelectElement>
-  text: (key: string) => React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>
-  selection: (key: string, value?: string) => React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>
-  toggle: (key: string) => React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>
+type SelectProps = {
+  onChange: React.ChangeEventHandler<HTMLSelectElement>
+  onBlur: React.FocusEventHandler<HTMLSelectElement>
+  id: string
+  name: string
+  value: string | string[] | number
+}
+
+type TextareaProps = {
+  onChange: React.ChangeEventHandler<HTMLTextAreaElement>
+  onBlur: React.FocusEventHandler<HTMLTextAreaElement>
+  id: string
+  name: string
+  value: string
+}
+
+type CustomProps<T> = {
+  value: T,
+  onChange: (value: T) => void,
+  onBlur: () => void
+}
+
+type ToggleOptions = {
+  /**
+   * Specifies wether this checkbox should exclusively
+   * set the specified field value
+   */
+  exclusive?: boolean
+}
+
+
+type SelectInputHandler = (key: string) => SelectProps
+type TextInputHandler = (key: string) => InputProps
+type ToggleInputHandler = (key: string, value?: string, options?: ToggleOptions) => InputProps
+
+type FormInput =
+  { [T in TextInputType]: TextInputHandler } &
+  { [T in ToggleInputType]: ToggleInputHandler } &
+  { select: SelectInputHandler }
+
+interface FormField {
+  /**
+   * Current value of the field
+   */
+  readonly value: any
+
+  /**
+   * Specifies whether or not an input for this field has been touched
+   */
+  readonly touched: boolean
+
+  /**
+   * Changes the value of this field.
+   */
+  change(value: any)
+}
+
+interface FormArray {
+  enumerate<T>(cb: (args: { key: string, value: any }) => T): Array<T>
+  push<T>(value: T): void
 }
 
 export interface FormComponentProps {
   handleSubmit: (values: any) => void
-  input: InputListener
-  meta: (key: string) => FieldMeta
-  value: (key: string) => any
-  enumerate<T>(key: string, cb: (args: { key: string, value: any }) => T): Array<T>
-  push<T>(key: string, value: T): void
-  change<T>(key: string, value: T): void
-  refresh: boolean
+  input: FormInput
+  field: (key: string) => FormField
+  array: (key: string) => FormArray
 }
 
 type FormProps = {
   defaultValue?: any,
   onSubmit?: (value: any) => any
+}
+
+function onChange<T extends HTMLInputElement | HTMLSelectElement>(handler: (value: string) => void) {
+  return (event: React.ChangeEvent<T>) => {
+    handler(event.target.value)
+  }
 }
 
 export function form(FormComponent: React.ComponentClass<FormComponentProps> | React.StatelessComponent<FormComponentProps>): React.ComponentClass<FormProps> {
@@ -38,8 +104,13 @@ export function form(FormComponent: React.ComponentClass<FormComponentProps> | R
         refresh: false
       }
 
-      this.meta = this.meta.bind(this)
       this.handleSubmit = this.handleSubmit.bind(this)
+      this.dispatch = this.dispatch.bind(this)
+      this.field = this.field.bind(this)
+      this.array = this.array.bind(this)
+      this.selectInput = this.selectInput.bind(this)
+      this.toggleInput = this.toggleInput.bind(this)
+      this.textInput = this.textInput.bind(this)
     }
 
     private dispatch(action: Action) {
@@ -51,93 +122,120 @@ export function form(FormComponent: React.ComponentClass<FormComponentProps> | R
       this.props.onSubmit && this.props.onSubmit(this.state.values)
     }
 
-    private handleChange<TElement extends HTMLInputElement | HTMLSelectElement>(key: string) {
-      return (event: React.ChangeEvent<TElement>) => {
-        const value = event.target.value
-        this.dispatch({
-          type: 'FIELD_CHANGE',
-          field: key,
-          value: value
-        })
-      }
-    }
-
-    private handleBlur<TElement extends HTMLInputElement | HTMLSelectElement>(key: string) {
-      return (event: React.FocusEvent<TElement>) => {
-        this.dispatch({
-          type: 'FIELD_BLUR',
-          field: key
-        })
-      }
-    }
-
-    private meta(key: string): { touched: boolean } {
+    private field(field: string): FormField {
       return {
-        touched: this.state.touched[key] || false
+        touched: this.state.touched[field] || false,
+        value: this.state.values[field],
+        change: value => this.dispatch({
+          type: 'FIELD_CHANGE',
+          field,
+          value
+        })
+      }
+    }
+
+    private array(field: string): FormArray {
+      return {
+        enumerate: cb => {
+          return Object.keys(this.state.values)
+            .filter(x => x.startsWith(field))
+            .map(x => cb({ key: x, value: this.state.values[x] }))
+        },
+        push: value => this.dispatch({
+          type: 'FIELD_PUSH',
+          value,
+          field
+        })
+      }
+    }
+
+    private selectInput(field): SelectProps {
+      return {
+        value: this.state.values[field] || '',
+        onChange: onChange(value => this.dispatch({
+          type: 'FIELD_CHANGE',
+          field,
+          value
+        })),
+        onBlur: () => this.dispatch({ type: 'FIELD_BLUR', field }),
+        name: field,
+        id: field
+      }
+    }
+
+    private textInput(type: TextInputType): TextInputHandler {
+      return field => ({
+        type,
+        value: this.state.values[field] || '',
+        onChange: onChange(value => this.dispatch({
+          type: 'FIELD_CHANGE',
+          field,
+          value
+        })),
+        onBlur: () => this.dispatch({
+          type: 'FIELD_BLUR',
+          field
+        }),
+        name: field,
+        id: field
+      })
+    }
+
+    private toggleInput(type: ToggleInputType): ToggleInputHandler {
+      return (field, value, options = { exclusive: false }) => {
+        const key = options.exclusive ? `${field}.${value}` : field
+        const checked = value !== undefined
+          ? this.state.values[field] === value
+          : !!this.state.values[field]
+
+        const checkedValue = value !== undefined ? value : true
+        const unCheckedValue = value !== undefined ? value : true
+
+        return {
+          type,
+          name: key,
+          id: key,
+          checked,
+          value,
+          onChange: (e) => this.dispatch({
+            type: 'FIELD_CHANGE',
+            field,
+            value: e.target.checked
+              ? value !== undefined ? value : true
+              : value !== undefined ? '' : false
+          }),
+          onBlur: () => this.dispatch({
+            type: 'FIELD_BLUR',
+            field
+          })
+        }
       }
     }
 
     render() {
       return (
         <FormComponent
+          field={this.field}
           input={{
-            select: field => ({
-              value: this.state.values[field] || '',
-              onChange: this.handleChange(field),
-              onBlur: this.handleBlur(field),
-              name: field,
-              id: field
-            }),
-            text: field => ({
-              value: this.state.values[field] || '',
-              onChange: this.handleChange(field),
-              onBlur: this.handleBlur(field),
-              name: field,
-              id: field
-            }),
-            selection: (field, value) => ({
-              name: `${field}.${value}`,
-              id: `${field}.${value}`,
-              checked: this.state.values[field] === value,
+            select: this.selectInput,
+            text: this.textInput('text'),
+            password: this.textInput('password'),
+            number: this.textInput('number'),
+            email: this.textInput('email'),
+            checkbox: this.toggleInput('checkbox'),
+            radio: this.toggleInput('radio')
+          }}
+          array={field => ({
+            enumerate: cb => {
+              return Object.keys(this.state.values)
+                .filter(x => x.startsWith(field))
+                .map(x => cb({ key: x, value: this.state.values[x] }))
+            },
+            push: value => this.dispatch({
+              type: 'FIELD_PUSH',
               value,
-              onChange: (e) => this.dispatch({
-                type: 'FIELD_CHANGE',
-                field,
-                value: e.target.checked ? value : ''
-              }),
-              onBlur: this.handleBlur(field)
-            }),
-            toggle: (field) => ({
-              name: field,
-              id: field,
-              checked: !!this.state.values[field],
-              value: !!this.state.values[field] ? 'on' : 'unchecked',
-              onChange: (e) => this.dispatch({
-                type: 'FIELD_CHANGE',
-                field,
-                value: !!e.target.checked
-              }),
-              onBlur: this.handleBlur(field)
+              field
             })
-          }}
-          refresh={this.state.refresh}
-          meta={this.meta}
-          value={key => this.state.values[key]}
-          enumerate={(key, cb) => {
-            return Object.keys(this.state.values)
-              .filter(x => x.startsWith(key))
-              .map(x => cb({ key: x, value: this.state.values[x] }))
-          }}
-          push={(key, value) => this.dispatch({
-            type: 'FIELD_PUSH',
-            value,
-            field: key
-          })
-          }
-          change={(field, value) => this.dispatch({
-            type: 'FIELD_CHANGE',
-            value,
-            field
           })}
           handleSubmit={this.handleSubmit}
         />
