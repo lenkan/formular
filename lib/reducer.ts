@@ -32,7 +32,13 @@ interface PushAction {
   value: any
 }
 
-export type Action = ChangeAction | BlurAction | PushAction
+interface RemoveAction {
+  field: string,
+  type: 'FIELD_REMOVE',
+  index: number
+}
+
+export type Action = ChangeAction | BlurAction | PushAction | RemoveAction
 
 const initialState: FormState = {
   values: {},
@@ -69,6 +75,21 @@ function reduce(prevState: FormState = initialState, action: Action): FormState 
           ], action.field)
         },
         refresh: !prevState.refresh
+      }
+    case 'FIELD_REMOVE':
+      return {
+        ...prevState,
+        values: {
+          ...Object.keys(prevState.values).reduce((res, key) => {
+            if (!key.startsWith(action.field)) {
+              res[key] = prevState.values[key]
+            }
+            return res
+          }, {}),
+          ...flatten([
+            ...(expand(prevState.values, action.field) || []).filter((x, index) => index !== action.index)
+          ], action.field)
+        }
       }
     default:
       return prevState

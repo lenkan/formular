@@ -65,4 +65,23 @@ describe('reduce', () => {
       expect(result.values['interests.2']).toBe('chess')
     })
   })
+
+  describe('field remove', () => {
+    it('pushes new value to existing field array', () => {
+      const result = reduce(state({
+        values: {
+          'interests.0': 'Hockey',
+          'interests.1': 'Moo'
+        }
+      }), {
+          type: 'FIELD_REMOVE',
+          field: 'interests',
+          index: 0
+        })
+
+      expect(result.values).toEqual({
+        'interests.0': 'Moo'
+      })
+    })
+  })
 })

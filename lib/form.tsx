@@ -72,8 +72,9 @@ interface FormField {
 }
 
 interface FormArray {
-  enumerate<T>(cb: (args: { key: string, value: any }) => T): Array<T>
+  enumerate<T>(cb: (args: { key: string, value: any, index: number }) => T): Array<T>
   push<T>(value: T): void
+  remove(index: number): void
 }
 
 export interface FormComponentProps {
@@ -139,12 +140,17 @@ export function form(FormComponent: React.ComponentClass<FormComponentProps> | R
         enumerate: cb => {
           return Object.keys(this.state.values)
             .filter(x => x.startsWith(field))
-            .map(x => cb({ key: x, value: this.state.values[x] }))
+            .map((x, index) => cb({ key: x, value: this.state.values[x], index }))
         },
         push: value => this.dispatch({
           type: 'FIELD_PUSH',
           value,
           field
+        }),
+        remove: index => this.dispatch({
+          type: 'FIELD_REMOVE',
+          field,
+          index
         })
       }
     }
@@ -225,18 +231,7 @@ export function form(FormComponent: React.ComponentClass<FormComponentProps> | R
             checkbox: this.toggleInput('checkbox'),
             radio: this.toggleInput('radio')
           }}
-          array={field => ({
-            enumerate: cb => {
-              return Object.keys(this.state.values)
-                .filter(x => x.startsWith(field))
-                .map(x => cb({ key: x, value: this.state.values[x] }))
-            },
-            push: value => this.dispatch({
-              type: 'FIELD_PUSH',
-              value,
-              field
-            })
-          })}
+          array={this.array}
           handleSubmit={this.handleSubmit}
         />
       )
