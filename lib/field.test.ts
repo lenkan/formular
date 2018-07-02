@@ -122,7 +122,7 @@ describe('field', () => {
       })
 
       const input = field.checkbox({ value: 'thevalue' })
-      input.onChange({ target: { value: 'thevalue', checked: true } })
+      input.onChange({ target: { name: 'foo', value: 'thevalue', checked: true } })
 
       expect(input.checked).toBe(false)
       expect(input.value).toBe('thevalue')
