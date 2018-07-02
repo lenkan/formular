@@ -1,6 +1,44 @@
 import * as React from 'react'
 import { form, FormComponentProps } from '../lib/form'
 
+const Checkbox = ({ label, input }) => {
+  return (
+    <React.Fragment>
+      <input {...input} />
+      <label htmlFor={input.id}>{label}</label>
+    </React.Fragment>
+  )
+}
+
+const Radio = ({ label, input }) => {
+  return (
+    <React.Fragment>
+      <input {...input} />
+      <label htmlFor={input.id}>{label}</label>
+    </React.Fragment>
+  )
+}
+
+const TextInput = ({ label, input }) => {
+  return (
+    <React.Fragment>
+      <label htmlFor={input.id}>{label}</label>
+      <input {...input} />
+    </React.Fragment>
+  )
+}
+
+const SelectInput = ({ label, input, children }) => {
+  return (
+    <React.Fragment>
+      <label htmlFor={input.id}>{label}</label>
+      <select {...input}>
+        {children}
+      </select>
+    </React.Fragment>
+  )
+}
+
 const Form = (props: FormComponentProps) => {
   const { handleSubmit, field, array } = props
   const interests = array('interests')
@@ -15,30 +53,26 @@ const Form = (props: FormComponentProps) => {
       </section>
       <fieldset>
         <legend>Namn</legend>
-        <label htmlFor='first-name'>Efternamn</label>
-        <input {...field('first-name').input({ type: 'text' })} />
-        <label htmlFor='last-name'>Efternamn</label>
-        <input {...field('last-name').input({ type: 'text' })} />
-        <select {...field('gender').input({ type: 'select' })} >
+        <TextInput label='First name' input={field('first-name').input({ type: 'text' })} />
+        <TextInput label='Last name' input={field('last-name').input({ type: 'text' })} />
+        <SelectInput label='Gender' input={field('gender').input({ type: 'select' })} >
           <option value='male'>Male</option>
           <option value='female'>Female</option>
-        </select>
+        </SelectInput>
       </fieldset>
       <fieldset>
         <legend>Address</legend>
-        <label htmlFor='address.street'>Street</label>
-        <input  {...field('address.street').input({ type: 'text' })} />
-        <label>ZipCode</label>
-        <input  {...field('address.zipcode').input({ type: 'text' })} />
+        <TextInput label='Street' input={field('address.street').input({ type: 'text' })} />
+        <TextInput label='ZipCode' input={field('address.zipcode').input({ type: 'text' })} />
       </fieldset>
       <fieldset>
         <legend>Interests</legend>
         <label htmlFor='next-interest'>Lägg till</label>
         {
-          interests.enumerate(({ key, value, index }) => {
+          interests.enumerate(({ field, key, index }) => {
             return (
               <div key={key}>
-                <input {...field(key).input({ type: 'text' })} />
+                <input {...field.input({ type: 'text' })} />
                 <button type='button'
                   onClick={() => {
                     interests.remove(index)
@@ -61,22 +95,22 @@ const Form = (props: FormComponentProps) => {
         </div>
       </fieldset>
       <fieldset>
-        <legend>Status</legend>
+        <legend>Checkboxes</legend>
         <div>
-          <input {...field('status').input({ type: 'checkbox', value: 'bar', exclusive: true })} />
-          <label htmlFor='status.bar' >Bar</label>
+          <Checkbox label='Bar' input={field('checkbox').checkbox({ value: 'bar' })} />
         </div>
         <div>
-          <input {...field('status').input({ type: 'checkbox', value: 'foo', exclusive: true })} />
-          <label htmlFor='status.foo' >Foo</label>
+          <Checkbox label='Foo' input={field('checkbox').checkbox({ value: 'foo' })} />
         </div>
       </fieldset>
       <fieldset>
-        <legend>Status</legend>
-        <label htmlFor='statusradio.bar' >Bar</label>
-        <input {...field('statusradio').input({ type: 'radio', value: 'bar', exclusive: true })} />
-        <label htmlFor='statusradio.foo' >Foo</label>
-        <input {...field('statusradio').input({ type: 'radio', value: 'foo', exclusive: true })} />
+        <legend>Radio toggle</legend>
+        <div>
+          <Radio label='Bar' input={field('radio').radio({ value: 'bar' })} />
+        </div>
+        <div>
+          <Radio label='Foo' input={field('radio').radio({ value: 'foo' })} />
+        </div>
       </fieldset>
       <fieldset>
         <legend>Nyhetsbrev</legend>
@@ -87,6 +121,7 @@ const Form = (props: FormComponentProps) => {
     </form>
   )
 }
+
 
 export default form(Form)
 

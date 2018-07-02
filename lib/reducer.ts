@@ -16,9 +16,8 @@ export interface FormState {
 }
 
 interface ChangeAction {
-  field: string
   type: 'FIELD_CHANGE'
-  value: any
+  target: HTMLInputElement | { name: string, value: any }
 }
 
 interface BlurAction {
@@ -46,6 +45,27 @@ const initialState: FormState = {
   refresh: false
 }
 
+function readChangeValue(previousValue: any, target: ChangeAction['target']) {
+  if (target instanceof HTMLInputElement) {
+    switch (target.type) {
+      case 'checkbox':
+        if (target.checked) {
+          return target.value
+            ? [...Array.isArray(previousValue) ? previousValue : [], target.value]
+            : true
+        }
+        return target.value
+          ? (Array.isArray(previousValue) ? previousValue : []).filter(x => x !== target.value)
+          : false
+      case 'radio':
+        return target.value
+      default:
+        return target.value
+    }
+  }
+  return target.value
+}
+
 function reduce(prevState: FormState = initialState, action: Action): FormState {
   switch (action.type) {
     case 'FIELD_BLUR':
@@ -61,7 +81,7 @@ function reduce(prevState: FormState = initialState, action: Action): FormState 
         ...prevState,
         values: {
           ...prevState.values,
-          [action.field]: action.value
+          [action.target.name]: readChangeValue(prevState.values[action.target.name], action.target)
         }
       }
     case 'FIELD_PUSH':
@@ -95,6 +115,8 @@ function reduce(prevState: FormState = initialState, action: Action): FormState 
       return prevState
   }
 }
+
+export type Dispatcher = (action: Action) => void
 
 export default (prevState: FormState = initialState, action: Action) => {
   const newState = reduce(prevState, action)
