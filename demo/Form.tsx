@@ -114,7 +114,7 @@ const Form = (props: FormComponentProps) => {
       </fieldset>
       <fieldset>
         <legend>Nyhetsbrev</legend>
-        <input {...field('news').input({ type: 'checkbox' })} />
+        <input {...field('news').checkbox({ })} />
         <label htmlFor='news'>Jag vill ha nyhetsbrev</label>
       </fieldset>
       <button type='submit'>Spara</button>

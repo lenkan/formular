@@ -1,11 +1,11 @@
 function flatten(obj: Object | Array<any>, result: Object, prefix: string): { [key: string]: any } {
   if (Array.isArray(obj)) {
-    return flatten(obj.reduce((res, value, index) => ({ ...res, [index]: value }), {}), result, prefix)
+    return flatten(obj.reduce((res, value, index) => ({ ...res, [`[${index}]`]: value }), {}), result, prefix)
   }
 
   return Object.keys(obj).reduce((result, key) => {
     const value = obj[key]
-    const path = [prefix, key].join('.').replace(/^\./, '')
+    const path = [prefix, key].join('.').replace(/^\./, '').replace(/\.\[/g, '[')
 
     switch (typeof value) {
       case 'boolean':

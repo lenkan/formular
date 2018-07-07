@@ -1,5 +1,5 @@
 import flatten from './utils/flatten';
-import expand from './utils/expand';
+import { expand } from './utils/expand';
 
 type FormValueMap = {
   [key: string]: any
@@ -85,18 +85,17 @@ function reduce(prevState: FormState = initialState, action: Action): FormState 
         }
       }
     case 'FIELD_PUSH':
+      const expanded = expand(prevState.values, action.field)
       return {
         ...prevState,
         values: {
           ...prevState.values,
-          ...flatten([
-            ...expand(prevState.values, action.field) || [],
-            action.value
-          ], action.field)
+          ...flatten([...Array.isArray(expanded) ? expanded : [], action.value], action.field)
         },
         refresh: !prevState.refresh
       }
     case 'FIELD_REMOVE':
+      const a = expand(prevState.values, action.field)
       return {
         ...prevState,
         values: {
@@ -106,9 +105,10 @@ function reduce(prevState: FormState = initialState, action: Action): FormState 
             }
             return res
           }, {}),
-          ...flatten([
-            ...(expand(prevState.values, action.field) || []).filter((x, index) => index !== action.index)
-          ], action.field)
+          ...flatten(
+            (Array.isArray(a) ? a : []).filter((x, index) => index !== action.index),
+            action.field
+          )
         }
       }
     default:
