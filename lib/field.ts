@@ -162,7 +162,7 @@ export function createField(args: { field: string, state: { value: any, touched:
     }
   }
 
-  function checkbox(options: CheckboxOptions): ElementController<HTMLInputElement> {
+  function checkbox(options: CheckboxOptions = {}): ElementController<HTMLInputElement> {
     return {
       type: 'checkbox',
       name: field,

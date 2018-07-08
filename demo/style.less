@@ -1,16 +1,33 @@
 body {
-  background-color: white
+  background-color: white;
+  max-width: 800px;
+  margin: auto;
 }
 
 label {
-  display: inline-block;
+  display: block;
+  margin: 0px 0px 4px 0px;
 }
 
-input textarea select {
-  display: block;
+input, textarea, select {
   width: 100%;
-  margin: 2px 4px;
+  display: block;
+  margin: 0px 0px 4px 0px;
+}
+
+input, textarea, select {
+  padding: 6px 6px;
   font-size: 14px;
+  box-sizing: border-box;
+}
+
+input[type="radio"], input[type="checkbox"] {
+  display: inline-block;
+  width: unset;
+  
+  +label {
+    display: inline-block;
+  }
 }
 
 button {

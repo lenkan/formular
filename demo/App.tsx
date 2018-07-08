@@ -3,14 +3,16 @@ import { forms, FormType, FormSpec } from './forms'
 
 
 interface AppState {
-  form: FormType | ''
+  form: FormType | '',
+  showCode: boolean
 }
 
 export class App extends React.Component<{}, AppState> {
   constructor(props) {
     super(props)
     this.state = {
-      form: ''
+      form: '',
+      showCode: false
     }
   }
 
@@ -29,21 +31,34 @@ export class App extends React.Component<{}, AppState> {
             })
           }
         </nav>
-        <section>
-          {
-            form && form.code && (
-              <pre>
-                <code>
-                  {form.code}
-                </code>
-              </pre>
-            )
-          }
-          {
-            form && form.component && <form.component onSubmit={values => console.log(JSON.stringify(values))} />
-          }
-        </section>
-      </React.Fragment>
+        {
+          form && (
+            <section>
+              <header>
+                <h1>{form.type.toUpperCase()}</h1>
+                <button onClick={() => this.setState({ showCode: false })}>{'Visa formulär'}</button>
+                <button onClick={() => this.setState({ showCode: true })}>{'</>'}</button>
+              </header>
+              <div>
+                {
+                  this.state.showCode && (
+                    <pre>
+                      <code>
+                        {form.code}
+                      </code>
+                    </pre>
+                  )
+                }
+                {
+                  !this.state.showCode && (
+                    <form.component onSubmit={values => console.log(JSON.stringify(values))} />
+                  )
+                }
+              </div>
+            </section>
+          )
+        }
+      </React.Fragment >
     )
   }
 }

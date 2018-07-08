@@ -11,7 +11,6 @@ type FormTouchedMap = {
 export interface FormState {
   values: FormValueMap
   touched: FormTouchedMap
-  refresh: boolean
 }
 
 interface ChangeAction {
@@ -36,8 +35,7 @@ export type Dispatcher = (action: Action) => void
 
 const initialState: FormState = {
   values: {},
-  touched: {},
-  refresh: false
+  touched: {}
 }
 
 export function reduce(prevState: FormState = initialState, action: Action): FormState {

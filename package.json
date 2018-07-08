@@ -1,10 +1,15 @@
 {
-  "name": "roboform",
-  "main": "lib/index.ts",
-  "version": "1.0.0",
-  "private": true,
+  "name": "reformular",
+  "main": "dist/index.js",
+  "version": "1.0.3",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lenkan/formular.git"
+  },
   "scripts": {
     "demo": "node demo/run.js",
+    "prepare": "tsc",
+    "build": "tsc",
     "test": "jest"
   },
   "peerDependencies": {
@@ -26,6 +31,7 @@
     "react": "^16.4.1",
     "react-dom": "^16.4.1",
     "style-loader": "^0.21.0",
+    "styled-components": "^3.3.3",
     "ts-jest": "^22.4.6",
     "ts-loader": "^4.4.2",
     "ts-node": "^7.0.0",

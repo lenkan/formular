@@ -4,7 +4,6 @@ function state(s: Partial<FormState>): FormState {
   return {
     touched: {},
     values: {},
-    refresh: false,
     ...s
   }
 }

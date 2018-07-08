@@ -1,2 +1,7 @@
 demo/
+lib/
 .vscode/
+tsconfig.json
+yarn.lock
+.gitignore
+README.md

@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { ComponentType } from 'react'
 import { reduce, FormState, Action } from './store';
 import { FormField, createField } from './field';
 import { FormFieldArray, createFieldArray } from './field-array';
@@ -11,19 +12,28 @@ export interface FormComponentProps {
   }
 }
 
-type FormProps = {
+export interface FormController {
+  handleSubmit: (values: any) => void
+  field: (key: string) => FormField
+  array: (key: string) => FormFieldArray
+}
+
+export interface FormProps {
   defaultValue?: any,
   onSubmit?: (value: any) => any
 }
 
-export function form(FormComponent: React.ComponentClass<FormComponentProps> | React.StatelessComponent<FormComponentProps>): React.ComponentClass<FormProps> {
-  class Form extends React.Component<FormProps, FormState> {
-    constructor(props: FormProps) {
+export function form<TProps extends {} = {}>(
+  FormComponent: ComponentType<TProps & { form: FormController }>
+): React.ComponentClass<TProps & FormProps> {
+  class Form extends React.Component<TProps & FormProps, FormState> {
+    static displayName = `formular(${FormComponent.displayName || FormComponent.name})`;
+
+    constructor(props: TProps & FormProps) {
       super(props)
       this.state = {
         touched: {},
-        values: {},
-        refresh: false
+        values: {}
       }
 
       this.handleSubmit = this.handleSubmit.bind(this)
@@ -67,13 +77,14 @@ export function form(FormComponent: React.ComponentClass<FormComponentProps> | R
     }
 
     render() {
+      const controller: FormController = {
+        field: this.field,
+        array: this.array,
+        handleSubmit: this.handleSubmit
+      }
+
       return (
-        <FormComponent form={{
-          field: this.field,
-          array: this.array,
-          handleSubmit: this.handleSubmit
-        }}
-        />
+        <FormComponent form={controller} {...this.props} />
       )
     }
   }
