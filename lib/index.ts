@@ -1,1 +1,1 @@
-export { form, FormComponentProps } from './form'
+export { form, FormController, FormProps } from './form'

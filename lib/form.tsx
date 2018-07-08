@@ -4,14 +4,6 @@ import { reduce, FormState, Action } from './store';
 import { FormField, createField } from './field';
 import { FormFieldArray, createFieldArray } from './field-array';
 
-export interface FormComponentProps {
-  form: {
-    handleSubmit: (values: any) => void
-    field: (key: string) => FormField
-    array: (key: string) => FormFieldArray
-  }
-}
-
 export interface FormController {
   handleSubmit: (values: any) => void
   field: (key: string) => FormField
