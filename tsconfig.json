@@ -17,7 +17,7 @@
     // "noUnusedLocals": true,
     // "noUnusedParameters": true,
     // "noImplicitReturns": true,
-    // "allowJs": true,
+    "allowJs": true,
     "noFallthroughCasesInSwitch": true,
     "esModuleInterop": true
   }

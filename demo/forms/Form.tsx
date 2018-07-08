@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { form, FormComponentProps } from '../lib/form'
+import { form } from '../../lib/form'
 
 const Checkbox = ({ label, input }) => {
   return (
@@ -39,8 +39,8 @@ const SelectInput = ({ label, input, children }) => {
   )
 }
 
-const Form = (props: FormComponentProps) => {
-  const { handleSubmit, field, array } = props
+export const Form = form(props => {
+  const { form: { handleSubmit, field, array } } = props
   const interests = array('interests')
   const nextInterest = field('next-interest')
 
@@ -53,26 +53,26 @@ const Form = (props: FormComponentProps) => {
       </section>
       <fieldset>
         <legend>Namn</legend>
-        <TextInput label='First name' input={field('first-name').input({ type: 'text' })} />
-        <TextInput label='Last name' input={field('last-name').input({ type: 'text' })} />
-        <SelectInput label='Gender' input={field('gender').input({ type: 'select' })} >
+        <TextInput label='First name' input={field('first-name').text()} />
+        <TextInput label='Last name' input={field('last-name').text()} />
+        <SelectInput label='Gender' input={field('gender').select()} >
           <option value='male'>Male</option>
           <option value='female'>Female</option>
         </SelectInput>
       </fieldset>
       <fieldset>
         <legend>Address</legend>
-        <TextInput label='Street' input={field('address.street').input({ type: 'text' })} />
-        <TextInput label='ZipCode' input={field('address.zipcode').input({ type: 'text' })} />
+        <TextInput label='Street' input={field('address.street').text()} />
+        <TextInput label='ZipCode' input={field('address.zipcode').text()} />
       </fieldset>
       <fieldset>
         <legend>Interests</legend>
         <label htmlFor='next-interest'>Lägg till</label>
         {
-          interests.enumerate(({ field, key, index }) => {
+          interests.map((field, index) => {
             return (
-              <div key={key}>
-                <input {...field.input({ type: 'text' })} />
+              <div key={field.key}>
+                <input {...field.text()} />
                 <button type='button'
                   onClick={() => {
                     interests.remove(index)
@@ -84,7 +84,7 @@ const Form = (props: FormComponentProps) => {
           })
         }
         <div>
-          <input {...nextInterest.input({ type: 'text' })} />
+          <input {...nextInterest.text()} />
           <button type="button"
             onClick={() => {
               interests.push(nextInterest.value)
@@ -114,14 +114,17 @@ const Form = (props: FormComponentProps) => {
       </fieldset>
       <fieldset>
         <legend>Nyhetsbrev</legend>
-        <input {...field('news').checkbox({ })} />
+        <input {...field('news').checkbox({})} />
         <label htmlFor='news'>Jag vill ha nyhetsbrev</label>
       </fieldset>
+      {
+        field('news').value && (
+          <fieldset>
+            <legend>Vadå?</legend>
+          </fieldset>
+        )
+      }
       <button type='submit'>Spara</button>
     </form>
   )
-}
-
-
-export default form(Form)
-
+})

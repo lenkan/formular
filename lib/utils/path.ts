@@ -11,7 +11,6 @@ export function create(path: string, value: any) {
   keys.reduce((result, key, index) => {
     const isLast = index === keys.length - 1
     const isArray = !isLast && !!keys[index + 1].match(/\[(\d+)\]/)
-    // const isArrayIndex = !!key.match(/\[(\d+)\]/)
 
     if (isArray) {
       const next = []

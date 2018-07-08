@@ -1,11 +1,5 @@
 import { create, parseKeys } from "./path";
 
-type MinusKeys<T, U> = Pick<T, Exclude<keyof T, keyof U>>
-type MergeResult<T, U> = MinusKeys<T, U> & MinusKeys<U, T> & MergedProperties<U, T>
-type Defined<T> = T extends undefined ? never : T
-type MergedProperties<T, U> = { [K in keyof T & keyof U]: undefined extends T[K] ? Defined<T[K] | U[K]> : T[K] }
-// import { set, get } from 'lodash'
-
 function mergeArrays(target: Array<any>, source: Array<any>) {
   const length = target.length > source.length ? target.length : source.length
   return new Array(length).fill(0)
@@ -38,7 +32,7 @@ function merge<T extends object, K extends object>(target: T, source: K) {
   return source
 }
 
-export function expand(obj: { [key: string]: any }, path: string) {
+export function expand(obj: { [key: string]: any }, path: string): Object {
   const result = Object.keys(obj).reduce((res, key) => {
     if (key.startsWith(path)) {
       return merge(res, create(key, obj[key]))

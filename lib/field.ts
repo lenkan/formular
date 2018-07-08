@@ -1,16 +1,22 @@
-import * as React from 'react'
-import { Action, Dispatcher, FormState } from "./reducer";
+import { FocusEventHandler, ChangeEventHandler, ChangeEvent } from 'react'
+import { Dispatcher } from "./store"
 
 type InputType = 'text'
 
-interface HTMLElementListener {
+/**
+ * The supported HTML elements
+ */
+type HTMLElements = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+
+
+interface ElementController<T extends HTMLElements> {
   type?: InputType | 'radio' | 'checkbox'
   checked?: boolean
   id: string
   name: string
   value?: string | string[] | number
-  onChange: (event: { target: { name: string, value: string, checked?: boolean } }) => void
-  onBlur: React.FocusEventHandler
+  onChange: ChangeEventHandler<T>
+  onBlur: FocusEventHandler<T>
 }
 
 interface RadioButtonOptions {
@@ -32,14 +38,19 @@ interface TextareaOptions {
 }
 
 
-type InputOptions =
-  ({ type: TextInputOptions['type'] } & TextInputOptions) |
-  ({ type: 'radio' } & RadioButtonOptions) |
-  ({ type: 'checkbox' } & CheckboxOptions) |
-  ({ type: 'select' } & SelectOptions) |
-  ({ type: 'textarea' } & TextareaOptions)
+// type InputOptions =
+//   ({ type: TextInputOptions['type'] } & TextInputOptions) |
+//   ({ type: 'radio' } & RadioButtonOptions) |
+//   ({ type: 'checkbox' } & CheckboxOptions) |
+//   ({ type: 'select' } & SelectOptions) |
+//   ({ type: 'textarea' } & TextareaOptions)
 
 export interface FormField {
+  /**
+   * Gets the key that identifies this field
+   */
+  readonly key: string
+
   /**
    * Current value of the field
    */
@@ -53,26 +64,49 @@ export interface FormField {
   /**
    * Changes the value of this field.
    */
-  change(value: any)
+  change(value: any): void
 
-  /**
-   * Creates props to pass to an input element
-   * @param options 
-   */
-  input(options: InputOptions): HTMLElementListener
-
-  checkbox(options?: CheckboxOptions): HTMLElementListener
-  radio(options?: RadioButtonOptions): HTMLElementListener
-  select(options?: SelectOptions): HTMLElementListener
+  text(options?: TextInputOptions): ElementController<HTMLInputElement>
+  textarea(options?: TextareaOptions): ElementController<HTMLTextAreaElement>
+  checkbox(options?: CheckboxOptions): ElementController<HTMLInputElement>
+  radio(options?: RadioButtonOptions): ElementController<HTMLInputElement>
+  select(options?: SelectOptions): ElementController<HTMLSelectElement>
 }
+
+function readChangeValue<T extends HTMLElements>(previousValue: any, target: T) {
+  if (target instanceof HTMLInputElement) {
+    switch (target.type) {
+      case 'checkbox':
+        if (target.checked) {
+          return target.value
+            ? [...Array.isArray(previousValue) ? previousValue : [], target.value]
+            : true
+        }
+        return target.value
+          ? (Array.isArray(previousValue) ? previousValue : []).filter(x => x !== target.value)
+          : false
+      case 'radio':
+        return target.value
+      default:
+        return target.value
+    }
+  }
+  if (target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement) {
+    return target.value
+  }
+
+  return undefined
+}
+
 
 export function createField(args: { field: string, state: { value: any, touched: boolean }, dispatch: Dispatcher }): FormField {
   const { field, state, dispatch } = args
 
-  function handleChange(event) {
+  function handleChange<T extends HTMLElements>(event: ChangeEvent<T>) {
     dispatch({
       type: 'FIELD_CHANGE',
-      target: event.target ? event.target : event
+      field,
+      value: readChangeValue(state.value, event.currentTarget)
     })
   }
 
@@ -83,18 +117,28 @@ export function createField(args: { field: string, state: { value: any, touched:
     })
   }
 
-  function input(options: TextInputOptions): HTMLElementListener {
+  function text(_options?: TextInputOptions): ElementController<HTMLInputElement> {
     return {
       id: field,
       name: field,
       value: state.value || '',
-      type: options.type,
+      type: 'text',
       onChange: handleChange,
       onBlur: handleBlur
     }
   }
 
-  function select(options: SelectOptions): HTMLElementListener {
+  function textarea(_options?: TextareaOptions): ElementController<HTMLTextAreaElement> {
+    return {
+      id: field,
+      name: field,
+      value: state.value,
+      onChange: handleChange,
+      onBlur: handleBlur
+    }
+  }
+
+  function select(_options: SelectOptions): ElementController<HTMLSelectElement> {
     return {
       id: field,
       name: field,
@@ -104,7 +148,7 @@ export function createField(args: { field: string, state: { value: any, touched:
     }
   }
 
-  function radio(options: RadioButtonOptions): HTMLElementListener {
+  function radio(options: RadioButtonOptions): ElementController<HTMLInputElement> {
     const checked = state.value === options.value
 
     return {
@@ -118,7 +162,7 @@ export function createField(args: { field: string, state: { value: any, touched:
     }
   }
 
-  function checkbox(options: CheckboxOptions): HTMLElementListener {
+  function checkbox(options: CheckboxOptions): ElementController<HTMLInputElement> {
     return {
       type: 'checkbox',
       name: field,
@@ -132,23 +176,12 @@ export function createField(args: { field: string, state: { value: any, touched:
   }
 
   return {
+    key: field,
     value: state.value,
     touched: state.touched,
-    change: value => dispatch({ type: 'FIELD_CHANGE', target: { name: field, value } }),
-    input: options => {
-      switch (options.type) {
-        case 'text':
-          return input(options)
-        case 'select':
-          return select(options)
-        case 'checkbox':
-          return checkbox(options)
-        case 'radio':
-          return radio(options)
-        default:
-          return undefined
-      }
-    },
+    change: value => dispatch({ type: 'FIELD_CHANGE', field, value }),
+    textarea,
+    text,
     checkbox,
     radio,
     select

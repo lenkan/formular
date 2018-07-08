@@ -1,32 +1,48 @@
 import * as React from 'react'
-import Form from './Form';
+import { forms, FormType, FormSpec } from './forms'
 
-export class App extends React.Component<{}, { result?: any }> {
+
+interface AppState {
+  form: FormType | ''
+}
+
+export class App extends React.Component<{}, AppState> {
   constructor(props) {
     super(props)
     this.state = {
-      result: undefined
+      form: ''
     }
   }
+
   render() {
+    const form = forms.find(f => f.type === this.state.form)
     return (
       <React.Fragment>
+        <nav>
+          {
+            forms.map(form => {
+              return (
+                <button key={form.type} onClick={() => this.setState({ form: form.type })}>
+                  {form.type.toUpperCase()}
+                </button>
+              )
+            })
+          }
+        </nav>
         <section>
-          <h1>Formulär</h1>
-          <Form onSubmit={values => this.setState({ result: values })} />
-        </section>
-        {
-          this.state.result && (
-            <section>
-              <h1>Resultat</h1>
+          {
+            form && form.code && (
               <pre>
                 <code>
-                  {JSON.stringify(this.state.result, null, 2)}
+                  {form.code}
                 </code>
               </pre>
-            </section>
-          )
-        }
+            )
+          }
+          {
+            form && form.component && <form.component onSubmit={values => console.log(JSON.stringify(values))} />
+          }
+        </section>
       </React.Fragment>
     )
   }

@@ -1,4 +1,4 @@
-import reduce, { FormState } from './reducer'
+import { reduce, FormState } from './store'
 
 function state(s: Partial<FormState>): FormState {
   return {
@@ -14,7 +14,8 @@ describe('reduce', () => {
     it('changes value in state', () => {
       expect(reduce(state({ values: { name: 'foo' } }), {
         type: 'FIELD_CHANGE',
-        target: { name: 'name', value: 'bar' }
+        field: 'name',
+        value: 'bar'
       })).toMatchObject({
         values: { name: 'bar' }
       })
@@ -28,7 +29,8 @@ describe('reduce', () => {
 
       expect(reduce(state({ values: { address } }), {
         type: 'FIELD_CHANGE',
-        target: { value: 'Wall Street', name: 'address.street' }
+        value: 'Wall Street',
+        field: 'address.street'
       })).toMatchObject({
         values: {
           'address.street': 'Wall Street'
@@ -37,49 +39,43 @@ describe('reduce', () => {
     })
   })
 
-  describe('field push', () => {
-    it('pushes new value as field to empty field array', () => {
+  describe('field array change', () => {
+    it('indexes value under field array key', () => {
       const result = reduce(state({ values: {} }), {
-        type: 'FIELD_PUSH',
+        type: 'FIELD_ARRAY_CHANGE',
         field: 'interests',
-        value: 'Hockey'
+        values: ['Hockey']
       })
 
       expect(result.values['interests[0]']).toBe('Hockey')
     })
 
-    it('pushes new value to existing field array', () => {
+    it('indexes multiple values to array key', () => {
       const result = reduce(state({
-        values: {
-          'interests[0]': 'Hockey',
-          'interests[1]': 'Moo'
-        }
+        values: {}
       }), {
-          type: 'FIELD_PUSH',
+          type: 'FIELD_ARRAY_CHANGE',
           field: 'interests',
-          value: 'chess'
+          values: ['Hockey', 'Moo', 'chess']
         })
 
       expect(result.values['interests[2]']).toBe('chess')
     })
-  })
 
-  describe('field remove', () => {
-    it('pushes new value to existing field array', () => {
+    it('removes old values', () => {
       const result = reduce(state({
         values: {
           'interests[0]': 'Hockey',
           'interests[1]': 'Moo'
         }
       }), {
-          type: 'FIELD_REMOVE',
+          type: 'FIELD_ARRAY_CHANGE',
           field: 'interests',
-          index: 0
+          values: ['chess']
         })
 
-      expect(result.values).toEqual({
-        'interests[0]': 'Moo'
-      })
+      expect(result.values['interests[0]']).toBe('chess')
+      expect(result.values['interests[1]']).toBeUndefined()
     })
   })
 })

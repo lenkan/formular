@@ -1,18 +1,14 @@
 import * as React from 'react'
-import reduce, { FormState, Action } from './reducer';
+import { reduce, FormState, Action } from './store';
 import { FormField, createField } from './field';
-
-
-interface FormArray {
-  enumerate<T>(cb: (args: { key: string, value: any, index: number, field: FormField }) => T): Array<T>
-  push<T>(value: T): void
-  remove(index: number): void
-}
+import { FormFieldArray, createFieldArray } from './field-array';
 
 export interface FormComponentProps {
-  handleSubmit: (values: any) => void
-  field: (key: string) => FormField
-  array: (key: string) => FormArray
+  form: {
+    handleSubmit: (values: any) => void
+    field: (key: string) => FormField
+    array: (key: string) => FormFieldArray
+  }
 }
 
 type FormProps = {
@@ -56,45 +52,27 @@ export function form(FormComponent: React.ComponentClass<FormComponentProps> | R
       })
     }
 
-    private array(field: string): FormArray {
-      return {
-        enumerate: cb => {
-          return Object.keys(this.state.values)
-            .filter(x => x.startsWith(field))
-            .map((x, index) => cb({
-              key: x,
-              value: this.state.values[x],
-              index,
-              field: createField({
-                field: x,
-                state: {
-                  value: this.state.values[x],
-                  touched: this.state.touched[x]
-                },
-                dispatch: this.dispatch
-              })
-            }))
-        },
-        push: value => this.dispatch({
-          type: 'FIELD_PUSH',
-          value,
-          field
-        }),
-        remove: index => this.dispatch({
-          type: 'FIELD_REMOVE',
-          field,
-          index
-        })
-      }
+    private array(field: string) {
+      return createFieldArray({
+        field,
+        fields: Object.keys(this.state.values)
+          .filter(key => key.startsWith(field))
+          .map(key => ({
+            key: key,
+            value: this.state.values[key],
+            touched: this.state.touched[key]
+          })),
+        dispatch: this.dispatch
+      })
     }
-
 
     render() {
       return (
-        <FormComponent
-          field={this.field}
-          array={this.array}
-          handleSubmit={this.handleSubmit}
+        <FormComponent form={{
+          field: this.field,
+          array: this.array,
+          handleSubmit: this.handleSubmit
+        }}
         />
       )
     }
